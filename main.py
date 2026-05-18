@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 from pydantic import BaseModel
+from fastapi import HTTPException
 
 
 class User(BaseModel):
@@ -43,10 +44,23 @@ def create_message(user: User):
 
 @app.post("/users")
 def add_user(user: User):
+    for existing_user in users:
+        if existing_user.name == user.name:
+            raise HTTPException(status_code=400,
+                            detail="User already exists!")
     users.append(user)
     return {"status": "success",
             "user_count": len(users)
             }
+
+
+@app.get("/users/{name}")
+def get_user_by_name(name: str):
+    for user in users:
+        if user.name == name:
+            return user
+    raise HTTPException(status_code=404,
+                        detail="User not found!")
 
 
 @app.delete("/user/{name}")
