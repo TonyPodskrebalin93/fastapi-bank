@@ -2,9 +2,15 @@ from fastapi import FastAPI
 import uvicorn
 from pydantic import BaseModel
 from fastapi import HTTPException
+from fastapi import status
 
 
 class User(BaseModel):
+    name: str
+    age: int
+
+
+class UserResponse(BaseModel):
     name: str
     age: int
 
@@ -42,19 +48,17 @@ def create_message(user: User):
     return {"message": f"Hello {user.name}!"}
 
 
-@app.post("/users")
+@app.post("/users", status_code=status.HTTP_201_CREATED)
 def add_user(user: User):
     for existing_user in users:
         if existing_user.name == user.name:
             raise HTTPException(status_code=400,
-                            detail="User already exists!")
+                                detail="User already exists!")
     users.append(user)
-    return {"status": "success",
-            "user_count": len(users)
-            }
+    return user
 
 
-@app.get("/users/{name}")
+@app.get("/users/{name}", response_model=UserResponse)
 def get_user_by_name(name: str):
     for user in users:
         if user.name == name:
@@ -75,15 +79,16 @@ def delete_user(name: str):
             "message": "User not found!"}
 
 
-@app.put("/user/{name}")
-def update_user(name: str, age: int):
+@app.put("/user/{name}", response_model=UserResponse)
+def update_user(name: str, updated_user: User):
     for user in users:
         if user.name == name:
-            user.age = age
-            return {"status": "success",
-                    "message": f"User {name} is updated!"}
-    return {"status": "error",
-            "message": "User not found!"}
+            user.name = updated_user.name
+            user.age = updated_user.age
+            return user
+
+    raise HTTPException(status_code=404,
+                        detail="User not found!")
 
 
 if __name__ == "__main__":
