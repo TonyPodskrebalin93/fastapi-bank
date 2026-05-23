@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 import uvicorn
 from pydantic import BaseModel
-from fastapi import HTTPException
-from fastapi import status
+from database import engine, Base, SessionLocal
+from models import UserDB
+
 
 
 class User(BaseModel):
@@ -15,9 +16,9 @@ class UserResponse(BaseModel):
     age: int
 
 
-app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
-users = []
+app = FastAPI()
 
 
 @app.get("/users")
@@ -50,12 +51,21 @@ def create_message(user: User):
 
 @app.post("/users", status_code=status.HTTP_201_CREATED)
 def add_user(user: User):
-    for existing_user in users:
-        if existing_user.name == user.name:
-            raise HTTPException(status_code=400,
-                                detail="User already exists!")
-    users.append(user)
-    return user
+    db = SessionLocal()
+
+    existing_user = db.query(UserDB).filter(UserDB.name == user.name).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400,
+                            detail="User already exists!")
+
+    new_user = UserDB(name=user.name,
+                      age=user.age)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
 
 
 @app.get("/users/{name}", response_model=UserResponse)
