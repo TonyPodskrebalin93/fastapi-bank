@@ -12,11 +12,10 @@ app.include_router(router)
 
 Base.metadata.create_all(bind=engine)
 
+
 @app.get("/")
 def home():
     return {"message": "Hello Anton Python Developer!"}
-
-
 
 
 if __name__ == "__main__":
