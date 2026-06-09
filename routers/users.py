@@ -4,6 +4,7 @@ import crud
 from database import get_db
 from models import UserDB
 from schemas import UserResponse, UserCreate, UserUpdate
+from services.user_service import create_user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -43,13 +44,7 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=UserResponse,
              status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = UserDB(name=user.name,
-                     age=user.age)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
+    return create_user_service(db, user)
 
 # @app.post("/users", status_code=status.HTTP_201_CREATED)
 # def add_user(user: User):
@@ -80,14 +75,18 @@ def get_user_by_name(name: str, db: Session = Depends(get_db)):
     return user_get
 
 
+@router.get("/by-age/{age}", response_model=list[UserResponse])
+def get_user_by_age(age: int, db: Session = Depends(get_db)):
+    return crud.get_users_by_age(db, age)
+
+
 @router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user_del = crud.user_delete(db, user_id)
     if user_del is None:
         raise HTTPException(status_code=404, detail="User not found!")
     else:
-        db.delete(user_del)
-        db.commit()
+
         return {"status": "success",
                 "message": f"User with {user_id} is deleted!"}
 
@@ -100,3 +99,7 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
                             detail="User not found!")
 
     return user_up
+
+@router.get("/older-than/{age}", response_model=list[UserResponse])
+def get_users_older_than(age: int, db: Session = Depends(get_db)):
+    return crud.get_users_older_than(db, age)

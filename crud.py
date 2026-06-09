@@ -36,3 +36,20 @@ def update_user(db: Session, user_id: int, user_data):
     db.commit()
     db.refresh(user)
     return user
+
+
+def create_user(db: Session, user):
+    new_user = UserDB(age=user.age,
+                      name=user.name)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+def get_users_by_age(db: Session, age: int):
+    return db.query(UserDB).filter(UserDB.age == age).all()
+
+
+def get_users_older_than(db: Session, age: int):
+    return db.query(UserDB).filter(UserDB.age > age).all()
