@@ -1,6 +1,7 @@
-from jose import jwt
+from jose import jwt, JWTError
+
 from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 
 import crud
 
@@ -23,9 +24,14 @@ def create_access_token(data: dict):
 
 
 def verify_token(token: str, db):
-    payload = jwt.decode(token,
-                         SECRET_KEY,
-                         algorithms=[ALGORITHM])
+    try:
+        payload = jwt.decode(token,
+                             SECRET_KEY,
+                             algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401,
+                            detail="invalid token")
+
 
     user_id = payload.get("user_id")
     if user_id is None:
