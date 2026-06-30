@@ -2,9 +2,10 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 import crud
 from database import get_db
-from models import UserDB
-from schemas import UserResponse, UserCreate, UserUpdate
+
+from schemas import UserResponse, UserCreate, UserUpdate, LoginRequest, Token
 from services.user_service import create_user_service
+from services.auth_service import login
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -41,10 +42,16 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
 #     }
 
 
+@router.post("/login",
+             response_model=Token)
+def login_user(user_data: LoginRequest, db: Session = Depends(get_db)):
+    return login(user_data, db)
+
 @router.post("/", response_model=UserResponse,
              status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return create_user_service(db, user)
+
 
 # @app.post("/users", status_code=status.HTTP_201_CREATED)
 # def add_user(user: User):
@@ -99,6 +106,7 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
                             detail="User not found!")
 
     return user_up
+
 
 @router.get("/older-than/{age}", response_model=list[UserResponse])
 def get_users_older_than(age: int, db: Session = Depends(get_db)):

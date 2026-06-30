@@ -10,6 +10,10 @@ def get_user_by_id(db: Session, user_id: int):
     return db.query(UserDB).filter(UserDB.id == user_id).first()
 
 
+def get_user_by_email(db: Session, email: str):
+    return db.query(UserDB).filter(UserDB.email == email).first()
+
+
 # def hello_user(db: Session, name: str):
 #     return db.query(UserDB).filter(UserDB.name == name).first()
 
@@ -40,7 +44,9 @@ def update_user(db: Session, user_id: int, user_data):
 
 def create_user(db: Session, user):
     new_user = UserDB(age=user.age,
-                      name=user.name)
+                      name=user.name,
+                      email=user.email,
+                      password=user.password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

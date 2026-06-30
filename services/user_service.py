@@ -2,11 +2,13 @@ from fastapi import HTTPException
 
 import crud
 from sqlalchemy.orm import Session
+from services.security import hash_password
 
 from schemas import UserCreate
 
 
 def create_user_service(db: Session, user: UserCreate):
+    user.password = hash_password(user.password)
     if user.age < 18 or user.age > 120:
         raise HTTPException(status_code=400,
                             detail="User must be at least 18 years old and higher than 120 years old")
