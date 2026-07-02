@@ -1,13 +1,20 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
+
 import crud
 from database import get_db
+from services.auth_service import get_current_user
 
 from schemas import UserResponse, UserCreate, UserUpdate, LoginRequest, Token
 from services.user_service import create_user_service
 from services.auth_service import login
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/profile")
+def profile(current_user: UserDB = Depends(get_current_user)):
+    return current_user
 
 
 @router.get("/", response_model=list[UserResponse])
@@ -46,6 +53,7 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
              response_model=Token)
 def login_user(user_data: LoginRequest, db: Session = Depends(get_db)):
     return login(user_data, db)
+
 
 @router.post("/", response_model=UserResponse,
              status_code=status.HTTP_201_CREATED)
