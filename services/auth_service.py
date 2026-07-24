@@ -1,19 +1,23 @@
 from fastapi import HTTPException
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from models import UserDB
+
+
 import crud
 from database import get_db
-from schemas import LoginRequest
+# from schemas import LoginRequest
 from services.security import verify_password, create_access_token, verify_token
 
 
-def login(user_data: LoginRequest, db: Session):
-    user = crud.get_user_by_email(db, email=user_data.email)
+def login(form_data: OAuth2PasswordRequestForm = Depends(),
+          db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, form_data.username)
     if user is None:
         raise HTTPException(status_code=401,
                             detail="Invalid credentials")
-    if not verify_password(user_data.password, user.password):
+    if not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=401,
                             detail="Invalid credentials")
     token = create_access_token({"user_id":
@@ -28,3 +32,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 def get_current_user(db: Session = Depends(get_db),
                      token: str = Depends(oauth2_scheme)):
     return verify_token(token, db)
+
+
+def require_admin(current_user: UserDB = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403,
+                            detail="Admin is not required")
+    return current_user

@@ -1,20 +1,29 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
+
 import crud
 from database import get_db
-from services.auth_service import get_current_user
+from models import UserDB
+from services.auth_service import get_current_user, require_admin
+from fastapi.security import OAuth2PasswordRequestForm
 
-from schemas import UserResponse, UserCreate, UserUpdate, LoginRequest, Token
+from schemas import UserResponse, UserCreate, UserUpdate, Token
 from services.user_service import create_user_service
 from services.auth_service import login
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/profile")
+@router.get("/profile", response_model=UserResponse)
 def profile(current_user: UserDB = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/admin/users", response_model=list[UserResponse])
+def admin_user(db: Session = Depends(get_db),
+            current_user: UserDB = Depends(require_admin)):
+    return crud.get_all_users(db)
 
 
 @router.get("/", response_model=list[UserResponse])
@@ -49,10 +58,12 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
 #     }
 
 
-@router.post("/login",
-             response_model=Token)
-def login_user(user_data: LoginRequest, db: Session = Depends(get_db)):
-    return login(user_data, db)
+@router.post("/login", response_model=Token)
+def login_user(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: Session = Depends(get_db),
+               ):
+    return login(form_data, db)
 
 
 @router.post("/", response_model=UserResponse,
@@ -96,7 +107,7 @@ def get_user_by_age(age: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: UserDB = Depends(require_admin)):
     user_del = crud.user_delete(db, user_id)
     if user_del is None:
         raise HTTPException(status_code=404, detail="User not found!")

@@ -9,6 +9,6 @@ class UserDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
-    password = Column(String[:72])
+    password = Column(String)
     age = Column(Integer)
-
+    role = Column(String, default="user")

@@ -8,6 +8,8 @@ class UserCreate(BaseModel):
     password: str
 
 
+
+
 class UserUpdate(BaseModel):
     name: str | None = None
 
@@ -19,6 +21,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     age: int
+    role: str
 
 
 class LoginRequest(BaseModel):

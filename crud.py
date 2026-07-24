@@ -46,7 +46,9 @@ def create_user(db: Session, user):
     new_user = UserDB(age=user.age,
                       name=user.name,
                       email=user.email,
-                      password=user.password)
+                      password=user.password,
+                      role="user"
+                      )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
